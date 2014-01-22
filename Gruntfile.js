@@ -12,12 +12,21 @@ module.exports = function(grunt) {
     pkg: grunt.file.readJSON('package.json'),
 
     sass: {
+      dev: {
+        options: {
+          lineNumbers: true,
+          style: 'expanded'
+        },
+        files: {
+          'public/assets/css/main.css': 'build/assets/css/main.scss'
+        }
+      },
       dist: {
         options: {
           style: 'compressed'
         },
         files: {
-          'public/assets/css/main.css': 'build/assets/css/main.scss'
+          'public/assets/css/main.min.css': 'build/assets/css/main.scss'
         }
       }
     },
@@ -43,6 +52,34 @@ module.exports = function(grunt) {
       }
     },
 
+    jekyll: {
+      dev: {
+        src: 'build/jekyll',
+        dest: 'build/jekyll/_site'
+      }
+    },
+    
+    copy: {
+      jekyll: {
+        files: [
+          {
+            'expand': true,
+            'cwd': 'build/jekyll/_site',
+            'src': ['**/*.html'],
+            'dest': 'public'
+          }
+        ]
+      },
+      fonts: {
+        files: [{
+            'expand': true,
+            'cwd': 'build/assets/fonts',
+            'src': ['**/*.{eot,ttf,woff,svg}'],
+            'dest': 'public/assets/fonts'
+        }]
+      }
+    },
+    
     imagemin: {
       dynamic: {
         files: [{
@@ -72,6 +109,13 @@ module.exports = function(grunt) {
           spawn: false,
         }
       },
+      jekyll: {
+        files: [
+          'build/jekyll/**/*.html',
+          '!build/jekyll/_site/**/*.html'
+        ],
+        tasks: ['jekyll', 'copy:jekyll']
+      },
       images: {
         files: ['build/assets/images/**/*.{png,jpg,gif}', 'build/assets/images/*.{png,jpg,gif}'],
         tasks: ['imagemin'],
@@ -84,10 +128,14 @@ module.exports = function(grunt) {
   });
 
   require('load-grunt-tasks')(grunt);
-
-  // Default Task is basically a rebuild
-  grunt.registerTask('default', ['sass', 'jshint', 'concat', 'uglify', 'imagemin']);
-
-  grunt.registerTask('dev', ['connect', 'watch']);
+  
+  grunt.loadNpmTasks('grunt-contrib-copy');
+  grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-contrib-sass');
+  grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-jekyll');
+  
+  grunt.registerTask('default', ['watch']);
+  grunt.registerTask('dev', ['sass', 'jekyll', 'copy:jekyll','copy:fonts', 'jshint', 'concat', 'uglify', 'imagemin']);
 
 };
